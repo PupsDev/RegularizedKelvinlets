@@ -20,15 +20,45 @@
 
 *****************************************************************************/
 
-#ifndef OBJECT_H_
-#define OBJECT_H_
+#include "simpleViewer.h"
 
-#include "QGLViewer/frame.h"
+using namespace std;
 
-class Object {
-public:
-  void draw() const;
-  qglviewer::Frame frame;
-};
+void drawBigAxis(qreal length)
+{
+     glLineWidth(2.);
+     glBegin(GL_LINES);
+     glColor3d(1.,0.,0.);
+     glVertex3d(-length, 0., 0);
+     glVertex3d(length, 0., 0.);
+     glEnd();
+      glLineWidth(1.);
+}
 
-#endif // OBJECT_H_
+// Draws a spiral
+void Viewer::draw() {
+
+  glColor3d(1.,1.,1.);
+  drawGrid(size,2*size);
+  //drawBigAxis(20.);
+  drawAxis(1.);
+
+
+    glBegin (GL_TRIANGLES);
+    for (unsigned int i = 0; i < mesh.T.size (); i++)
+        for (unsigned int j = 0; j < 3; j++) {
+            const MeshVertex & v = mesh.V[mesh.T[i].v[j]];
+            glNormal3f (v.n[0], v.n[1], v.n[2]);
+            glVertex3f (v.p[0], v.p[1], v.p[2]);
+        }
+    glEnd ();
+
+}
+
+
+void Viewer::init() {
+    setSceneRadius(50.);
+    mesh.loadOFF (std::string("C:\\Users\\pups\\libqgl\\libQGLViewer-2.8.0\\examples\\simpleViewer\\models\\arma.off"));
+    size = mesh.size;
+}
+

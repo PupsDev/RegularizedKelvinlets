@@ -20,19 +20,21 @@
 
 *****************************************************************************/
 
-#include "QGLViewer/constraint.h"
-#include "object.h"
+#include "simpleViewer.h"
+#include <qapplication.h>
 
-class ManipulatedFrameSetConstraint : public qglviewer::Constraint {
-public:
-  void clearSet();
-  void addObjectToSet(Object *o);
+int main(int argc, char **argv) {
+  // Read command lines arguments.
+  QApplication application(argc, argv);
 
-  virtual void constrainTranslation(qglviewer::Vec &translation,
-                                    qglviewer::Frame *const frame);
-  virtual void constrainRotation(qglviewer::Quaternion &rotation,
-                                 qglviewer::Frame *const frame);
+  // Instantiate the viewer.
+  Viewer viewer;
 
-private:
-  QList<Object *> objects_;
-};
+  viewer.setWindowTitle("simpleViewer");
+
+  // Make the viewer window visible on screen.
+  viewer.show();
+
+  // Run main loop.
+  return application.exec();
+}

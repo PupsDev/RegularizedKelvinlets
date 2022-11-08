@@ -1,16 +1,27 @@
 #include "Mesh.h"
 #include <iostream>
 #include <fstream>
+#include <limits>
+#include <cfloat>
+#include <tuple>
 
+bool compVec3(Vec3 a, Vec3 b)
+{
+    return std::make_tuple(a[0], a[1], a[2]) < std::make_tuple(b[0], b[1], b[2]);
+}
 void Mesh::loadOFF (const std::string & filename) {
     std::ifstream in (filename.c_str ());
     if (!in)
+    {
+        std::cout<<"can't read file"<<std::endl;
         exit (EXIT_FAILURE);
+    }
     std::string offString;
     unsigned int sizeV, sizeT, tmp;
     in >> offString >> sizeV >> sizeT >> tmp;
     V.resize (sizeV);
     T.resize (sizeT);
+
     for (unsigned int i = 0; i < sizeV; i++) {
         in >> V[i].p;
         V[i].pInit = V[i].p;
@@ -21,6 +32,15 @@ void Mesh::loadOFF (const std::string & filename) {
         for (unsigned int j = 0; j < 3; j++)
             in >> T[i].v[j];
     }
+    Vec3 mini(FLT_MAX,FLT_MAX,FLT_MAX);
+    Vec3 maxi(-FLT_MAX,-FLT_MAX,-FLT_MAX);
+    for(auto & v : V)
+    {
+        mini = std::min(mini,v.p, compVec3);
+        maxi = std::max(maxi,v.p,compVec3);
+    }
+    Vec3 d = maxi-mini;
+    size = d.length();
     in.close ();
     centerAndScaleToUnit ();
     recomputeNormals ();
@@ -47,6 +67,7 @@ void Mesh::centerAndScaleToUnit () {
         c += V[i].p;
     c /= V.size ();
     float maxD = (V[0].p - c).length();
+     size = maxD/10.;
     for (unsigned int i = 0; i < V.size (); i++){
         float m = (V[i].p - c).length();
         if (m > maxD)

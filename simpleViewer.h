@@ -20,17 +20,15 @@
 
 *****************************************************************************/
 
-#include "multiSelect.h"
-#include <qapplication.h>
+#include <QGLViewer/qglviewer.h>
 
-int main(int argc, char **argv) {
-  QApplication application(argc, argv);
+#include <Mesh.h>
 
-  Viewer viewer;
-
-  viewer.setWindowTitle("multiSelect");
-
-  viewer.show();
-
-  return application.exec();
-}
+class Viewer : public QGLViewer {
+protected:
+  virtual void draw();
+  virtual void init();
+private :
+      Mesh mesh;
+      float size;
+};
