@@ -36,7 +36,7 @@ public:
 protected:
   virtual void draw();
   virtual void keyPressEvent(QKeyEvent *e);
-    void mouseMoveEvent(QMouseEvent* const e);
+   //void mouseMoveEvent(QMouseEvent* const e);
   virtual void init();
   void drawSelection(double radius);
   void Grab(double radius);

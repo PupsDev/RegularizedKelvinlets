@@ -111,7 +111,7 @@ void Viewer::keyPressEvent(QKeyEvent *e) {
   if (!handled)
     QGLViewer::keyPressEvent(e);
 }
-
+/*
 void Viewer::mouseMoveEvent(QMouseEvent *event)
 {
     glEnable(GL_DEPTH_TEST);
@@ -175,12 +175,12 @@ void Viewer::mouseMoveEvent(QMouseEvent *event)
         std::cout <<"depths "<<depths<<std::endl;
         //gluUnProject(wpos.x(),400-wpos.y(),depths, mvmatrix, projmatrix,viewport,&Bx,&By,&Bz  );
         // std::cout <<Bx<<" "<<By<<" "<<Bz<<std::endl;
-*/
+
 
     }
 }
 
-
+*/
 /*
 void Viewer::mouseMoveEvent(QMouseEvent* const e)
  {
@@ -302,17 +302,15 @@ void Viewer::draw() {
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(45.0f, (float)800 / 640, 0.1, 100.);
+    gluPerspective(45.0f, (float)600 / 400, 0.1, 100.);
     glMatrixMode(GL_MODELVIEW);
     glColor3d(1.,1.,1.);
-    glEnable(GL_LIGHTING);
+    //glEnable(GL_LIGHTING);
     glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_DEPTH_TEST);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-   //glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
 
-    //std::cout<<this->camera()->position()[0]<<" "<<this->camera()->position()[1]<<" "<<this->camera()->position()[2]<<std::endl;
+    std::cout<<this->camera()->position()[0]<<" "<<this->camera()->position()[1]<<" "<<this->camera()->position()[2]<<std::endl;
 
 
 
@@ -329,60 +327,39 @@ void Viewer::draw() {
             glVertex3f (v.p[0], v.p[1], v.p[2]);
         }
     glEnd ();
-    //std::cout<<"offsetY -> "<<offsetY<<std::endl;
+    glPointSize(8.);
+    glBegin (GL_POINTS);
+    int k=0;
+    for(auto v : mesh.V)
+    {
+        if(k!=indiceTomove)
+        {
+            glColor3f(	0.,0.0,1.);
+        }
+        else
+        {
+            glColor3f(	0.,1.0,0.);
+        }
+        glVertex3f (v.p[0]+0.005*v.p[0], v.p[1]+0.005*v.p[1], v.p[2]+0.005*v.p[2]);
+        k++;
+    }
+    glEnd();
     if(selection)
     {
         glDisable(GL_LIGHTING);
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        //glOrtho(0.0, 800, 640, 0.0, 0.1, 100.0);
+
         glPushMatrix();
 
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         glPushMatrix();
 
-        /*
+        drawSelection(0.1);
         glMatrixMode(GL_MODELVIEW);
-
-        glDisable(GL_LIGHTING);
-        glDepthMask(GL_FALSE);  // disable writes to Z-Buffer
-        glDisable(GL_DEPTH_TEST);
-
-        glLoadIdentity();
-            glPushMatrix();*/
-        //glDisable(GL_CULL_FACE);
-
-            drawSelection(0.1);
-
-            /*glMatrixMode(GL_PROJECTION);
-            glPopMatrix();
-            glMatrixMode(GL_MODELVIEW);
-            glPopMatrix();
-
-            glEnable(GL_LIGHTING);
-            glEnable(GL_DEPTH_TEST);
-            glDepthMask(GL_TRUE);*/
-
-            /*glMatrixMode(GL_PROJECTION); // Select The Projection Matrix
-            glPopMatrix();
-            gluPerspective(45.0f, (float)800 / 640, 0.1, 100.);
-            glPushMatrix();*/
-            glMatrixMode(GL_MODELVIEW);
     }
     update();
-    //glPopMatrix();
-    /*
-    glMatrixMode(GL_PROJECTION); // Select The Projection Matrix
-    glLoadIdentity();
-    glPushMatrix();
-    gluPerspective(45.0f, (float)800 / 640, 0.1, 100.);
-    gluLookAt (0.0, 0.0, -20.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-
-    glMatrixMode(GL_MODELVIEW);
-    */
-    //glEnable(GL_LIGHTING);
-
 
 }
 void Viewer::init() {
@@ -407,21 +384,17 @@ void Viewer::init() {
 
     auto c =this->camera();
     auto p = c->position();
-        std::cout<<p[0]<<" "<<p[1]<<" "<<p[2]<<std::endl;
-    mycamera = new Camera	();
-    mycamera->setSceneCenter(Vec(0.,0.,-100.));
-
-
-    c->setPivotPoint(Vec(20,0.,0.));
-    //this->setCamera(mycamera);
-    c->setPosition(Vec(0.,0.,20.));
-    //c = this->camera();
-    p = c->position();
-
     std::cout<<p[0]<<" "<<p[1]<<" "<<p[2]<<std::endl;
-    this->setCamera(c);
-    c = this->camera();
-    p = c->position();
+
+
+
+
+    this->camera()->setPosition(Vec(0.,0.,-20.));
+    this->camera()->setPivotPoint(Vec(0.,0.,0.));
+    this->camera()->lookAt(Vec(0.,0.,0));
+
+    p = this->camera()->position();
+    std::cout<<p[0]<<" "<<p[1]<<" "<<p[2]<<std::endl;
 
     
 

@@ -36,7 +36,8 @@ int main(int argc, char **argv) {
   // Instantiate the viewer.
   Viewer viewer;
 
-  viewer.setWindowTitle("simpleViewer");
+  viewer.setWindowTitle("Kelvinlets");
+  viewer.resize(1280,800);
 
   // Make the viewer window visible on screen.
   viewer.show();
