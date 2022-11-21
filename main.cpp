@@ -22,10 +22,16 @@
 
 #include "simpleViewer.h"
 #include <qapplication.h>
-
+#include <QSurfaceFormat>
 int main(int argc, char **argv) {
   // Read command lines arguments.
   QApplication application(argc, argv);
+
+  QSurfaceFormat format;
+
+  format.setSamples(0);
+
+  QSurfaceFormat::setDefaultFormat(format);
 
   // Instantiate the viewer.
   Viewer viewer;

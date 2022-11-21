@@ -66,13 +66,13 @@ void Mesh::centerAndScaleToUnit () {
     for  (unsigned int i = 0; i < V.size (); i++)
         c += V[i].p;
     c /= V.size ();
-    float maxD = (V[0].p - c).length();
-     size = maxD/10.;
-    for (unsigned int i = 0; i < V.size (); i++){
+    float maxD = (V[0].p - c).length()/10.;
+     size = 10.*maxD;
+    /*for (unsigned int i = 0; i < V.size (); i++){
         float m = (V[i].p - c).length();
         if (m > maxD)
             maxD = m;
-    }
+    }*/
     for  (unsigned int i = 0; i < V.size (); i++) {
         V[i].p = (V[i].p - c) / maxD;
         V[i].pInit = (V[i].pInit - c) / maxD;

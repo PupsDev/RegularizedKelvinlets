@@ -21,14 +21,46 @@
 *****************************************************************************/
 
 #include <QGLViewer/qglviewer.h>
-
+#include <QMatrix4x4>
 #include <Mesh.h>
+#include <QGLViewer/camera.h>
+#include "Eigen/Dense"
+#include <QOpenGLFramebufferObject>
+#include <QOpenGLContext>
+#include <QOpenGLExtraFunctions>
+using namespace qglviewer;
 
 class Viewer : public QGLViewer {
+public:
+  Viewer() : wireframe_(false), flatShading_(false), grabFlag(false){};
 protected:
   virtual void draw();
+  virtual void keyPressEvent(QKeyEvent *e);
+    void mouseMoveEvent(QMouseEvent* const e);
   virtual void init();
+  void drawSelection(double radius);
+  void Grab(double radius);
+  void move();
 private :
+QOpenGLFramebufferObject* mFBO = nullptr;
       Mesh mesh;
+      Camera* mycamera;
       float size;
+      bool wireframe_, flatShading_;
+      bool selection;
+      bool grabFlag;
+
+      float offsetX=0.;
+      float offsetY=0.;
+     Eigen::Vector3d test;
+    double mini;
+    double maxi;
+    int indiceTomove;
+      QMatrix4x4 modelViewMatrix;
+      QMatrix4x4 projectionMatrix;
+       QPoint pixelMouse;
+
+        QPoint pos, prevPos;
+        bool moved;
+
 };
