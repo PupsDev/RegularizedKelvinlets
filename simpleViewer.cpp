@@ -1,22 +1,22 @@
 /****************************************************************************
 
- Copyright (C) 2002-2014 Gilles Debunne. All rights reserved.
+Copyright (C) 2002-2014 Gilles Debunne. All rights reserved.
 
- This file is part of the QGLViewer library version 2.8.0.
+This file is part of the QGLViewer library version 2.8.0.
 
- http://www.libqglviewer.com - contact@libqglviewer.com
+http://www.libqglviewer.com - contact@libqglviewer.com
 
- This file may be used under the terms of the GNU General Public License 
- versions 2.0 or 3.0 as published by the Free Software Foundation and
- appearing in the LICENSE file included in the packaging of this file.
- In addition, as a special exception, Gilles Debunne gives you certain 
- additional rights, described in the file GPL_EXCEPTION in this package.
+This file may be used under the terms of the GNU General Public License 
+versions 2.0 or 3.0 as published by the Free Software Foundation and
+appearing in the LICENSE file included in the packaging of this file.
+In addition, as a special exception, Gilles Debunne gives you certain 
+additional rights, described in the file GPL_EXCEPTION in this package.
 
- libQGLViewer uses dual licensing. Commercial/proprietary software must
- purchase a libQGLViewer Commercial License.
+libQGLViewer uses dual licensing. Commercial/proprietary software must
+purchase a libQGLViewer Commercial License.
 
- This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
- WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+This file is provided AS IS with NO WARRANTY OF ANY KIND, INCLUDING THE
+WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 
 *****************************************************************************/
 
@@ -53,235 +53,74 @@ void drawBigAxis(qreal length)
     glLineWidth(1.);
 }
 void Viewer::keyPressEvent(QKeyEvent *e) {
-  // Get event modifiers key
-  const Qt::KeyboardModifiers modifiers = e->modifiers();
+    // Get event modifiers key
+    const Qt::KeyboardModifiers modifiers = e->modifiers();
 
-  bool handled = false;
-  if((modifiers == Qt::NoButton))
-  {
-      switch(e->key())
-      {
+    bool handled = false;
+    if((modifiers == Qt::NoButton))
+    {
+        switch(e->key())
+        {
 
-          case  Qt::Key_W:
+            case  Qt::Key_W:
             wireframe_ = !wireframe_;
             handled = true;
 
-          break;
-          case  Qt::Key_B:
+            break;
+            case  Qt::Key_B:
             selection = !selection;
             handled = true;
 
-          break;
-          case  Qt::Key_G:
+            break;
+            case  Qt::Key_G:
             grabFlag = !grabFlag;
             handled = true;
-            Grab(0.5);
-
-          break;
-          case  Qt::Key_F:
+            break;
+            case  Qt::Key_F:
             flatShading_ = !flatShading_;
             handled = true;
-          break;
-      case Qt::Key_Up:
-          //std::cout<<"ok up"<<std::endl;
-          if(offsetY<0)
+            break;
+        case Qt::Key_Up:
+            if(offsetY<0)
             offsetY*=-1;
-          //if(offsetY>0)offsetY+=dy;
-              test[1]+=dy;
-          handled = true;
-          break;
+                test[1]+=dy;
+            handled = true;
+            break;
         case Qt::Key_Down:
-          //std::cout<<"ok down"<<std::endl;
-          /*
-          if(offsetY>0)
-            offsetY*=-1;
-           //if(offsetY<0)offsetY-=dy;
-           */
-          //this->camera()->setPosition (Vec(0.,0.,0.));
-          handled = true;
-          break;
-      }
-      if(handled)
-      {
+            handled = true;
+            break;
+        }
+        if(handled)
+        {
         move();
         update();
-      }
-  }
+        }
+    }
 
 
-  if (!handled)
-    QGLViewer::keyPressEvent(e);
-}
+    if (!handled)
+        QGLViewer::keyPressEvent(e);
+    }
 
 void Viewer::postSelection(const QPoint &point) {
-    std::cout<<"ZFar->"<<this->camera()->zFar ()<<std::endl;
-    //auto m = event->windowPos();
-    //pixelMouse = QPoint(m.x(),m.y());
     bool found=false;
-    //Vec
     mouseVec = this->camera()->pointUnderPixel(point,found);
     std::cout<<mouseVec[0]<<" "<<mouseVec[1]<<" "<<mouseVec[2]<<std::endl;
     std::cout<<found<<std::endl;
-    /*
-    if (selectedName() == -1)
-      QMessageBox::information(this, "No selection",
-                               "No object selected under pixel " +
-                                   QString::number(point.x()) + "," +
-                                   QString::number(point.y()));
-    else
-      QMessageBox::information(
-          this, "Selection",
-          "Spiral number " + QString::number(selectedName()) +
-              " selected under pixel " + QString::number(point.x()) + "," +
-              QString::number(point.y()));*/
-}
-/*
-void Viewer::mouseMoveEvent(QMouseEvent *event)
-{
-
-    //std::cout<<p[0]<<" "<<p[1]<<" "<<p[2]<<std::endl;
-
-    glEnable(GL_DEPTH_TEST);
-    if(!selection)
-    {
-
-        QPointF wpos = event->windowPos();
-      
-
-        QColor color;
-        glReadPixels(wpos.x(), this->height() - wpos.y(), 1, 1, GL_RGBA, GL_FLOAT, &color);
-
-        QVector3D screenCoordinates = QVector3D(wpos.x(),  this->height() - wpos.y(), 0.);
-        modelViewMatrix.setToIdentity();
-        projectionMatrix.setToIdentity();
-
-        //GLfloat mvmatrix[16];
-        //GLfloat pmatrix[16];
-        //this->camera()->getModelViewMatrix (mvmatrix);
-        //this->camera()->getProjectionMatrix (pmatrix);
-
-        QVector3D mouseIn3D = screenCoordinates.unproject(modelViewMatrix,
-                                                          projectionMatrix,
-                                                          QRect(0, 0, width(), height()));
-        //std::cout << "Clicked on pixel " << event->x() << ", " << event->y() <<endl;
-        bool found;
-        auto point = QPoint(event->x(),event->y());
-        auto cam = this->camera();
-          pixelMouse = QPoint(wpos.x(),wpos.y());
-        Vec t = cam->pointUnderPixel(QPoint(wpos.x(),wpos.y()),found);
-        std::cout <<t[0]<<" "<<t[1]<<" "<<t[2]<<std::endl;
-
-        auto pp = this->camera()->unprojectedCoordinatesOf(Vec(wpos.x(),wpos.y(),0.));
-        //std::cout<<found<<std::endl;
-        //std::cout <<t[0]<<" "<<t[1]<<" "<<t[2]<<std::endl;
-        //std::cout <<pp[0]<<" "<<pp[1]<<" "<<pp[2]<<std::endl;
-        /*
-        gluUnProject(	GLdouble winX,
-            GLdouble winY,
-            GLdouble winZ,
-            const GLdouble * model,
-            const GLdouble * proj,
-            const GLint * view,
-            GLdouble* objX,
-            GLdouble* objY,
-            GLdouble* objZ);
-        */
-/*
-        GLdouble Bx,By,Bz;
-        GLint viewport[4];
-        GLdouble mvmatrix[16], projmatrix[16];
-        //glGetDoublev(GL_MODELVIEW_MATRIX,mvmatrix );
-        //glGetDoublev(GL_PROJECTION_MATRIX,projmatrix );
-        this->camera()->getModelViewMatrix (mvmatrix);
-        this->camera()->getProjectionMatrix (projmatrix);
-        glGetIntegerv(GL_VIEWPORT,viewport );
-        GLfloat*  depths;
-        std::cout <<"test "<<std::endl;
-        glReadPixels (wpos.x(),this->height()-wpos.y(), this->width(), this->height(), GL_DEPTH_COMPONENT, GL_FLOAT, depths);
-        glGetError();
-        std::cout <<"depths "<<depths<<std::endl;
-        //gluUnProject(wpos.x(),400-wpos.y(),depths, mvmatrix, projmatrix,viewport,&Bx,&By,&Bz  );
-        // std::cout <<Bx<<" "<<By<<" "<<Bz<<std::endl;
-
-
-    }
 }
 
-*/
-/*
-void Viewer::mouseMoveEvent(QMouseEvent* const e)
- {
-
-   if (moved)
-   {
-       // Add position delta to current pos
-       pos += e->pos() - prevPos;
-       prevPos = e->pos();
-   }
-   if(selection)
-   {
-     // std::cout << "Clicked on pixel " << e->x() << ", " << e->y() <<endl;
-      pixelMouse = QPoint(e->x(),e->y());
-      update();
-   }
-
- }
-*/
-// Draws a spiral
-void Viewer::drawSelection(double radius) {
-    glColor3d(1.,0.,0.);
-    glLineWidth(4.);
-    glBegin (GL_LINES);
-    double theta = 0.;
-    int segments = 64;
-    QPoint p = mapFromGlobal(QCursor::pos());
-    //p =  pixelMouse;
-    //std::cout << p.x()<<" "<<p.y()<<std::endl;
-    std::cout << this->width()<<" "<<this->height()<<std::endl;
-
-    for(int i = 0 ; i < segments;i++)
-    {
-        theta = ((2*3.1415)*i)/segments;
-        double x = radius* cos(theta);
-        double y = radius* sin(theta);
-
-        //double x2 = (double)(p.x() -this->width()/2. )/250. +x;
-        //double y2 = (double)((this->height()-p.y()) -this->height()/2. )/250. +y;
-
-        double xscreen = (double)(2.*p.x()/ (double)this->width());
-        double yscreen = (double)(2.*(this->height()-p.y()) /(double)this->height());
-        std::cout << xscreen<<" "<<yscreen<<std::endl;
-
-        /*glVertex3fv(camera()->worldCoordinatesOf(
-            qglviewer::Vec( x2,   y2, -1.0)));
-        */
-        glVertex3fv(qglviewer::Vec(x+xscreen-1.,1.25*(y+yscreen-1.),0.));
-    }
-
-    glEnd ();
-    update();
-}
-void Viewer::Grab(double radius) {
-
-    //QPoint mousePos = QCursor::pos();
-    bool found=false;
-    auto p = mycamera->pointUnderPixel(pixelMouse,found);
-    std::cout<<found<<std::endl;
-    std::cout<<p[0]<<" "<<p[1]<<" "<<p[2]<<std::endl;	
-}
 double density_fonction(double epsilon, double repsilon)
 {
-  
-  return (15*pow(epsilon,4)/(8*M_PI))/(pow(repsilon,7));
+    return (15*pow(epsilon,4)/(8*M_PI))/(pow(repsilon,7));
 }
 double r_epsilon(double radius,double epsilon)
 {
-  return  sqrt(radius*radius + epsilon*epsilon);
+    return  sqrt(radius*radius + epsilon*epsilon);
 }
 Eigen::Vector3d force_u()
 {
 
-    //return test;
+//return test;
 }
 void Viewer::move() {
     double mu = 1.;
@@ -298,7 +137,7 @@ void Viewer::move() {
     }
     auto identity = Eigen::Matrix3d::Identity();
     Eigen::Vector3d x0 = points[indiceTomove];
-    
+
     for(int i = 0 ; i < points.size(); i++ )
     {
         Eigen::Vector3d rvector = x0 - points[i];
@@ -312,7 +151,7 @@ void Viewer::move() {
         Eigen::Matrix3d rrt = rvector * rvector.transpose();
         
         auto Kef = first + second*rrt + last;
- 
+
         Eigen::Vector3d f = density_fonction(epsilon, repsilon) * test;
         Eigen::Vector3d uForce = Kef * f;
 
@@ -321,7 +160,7 @@ void Viewer::move() {
     int k =0;
     for(auto p : points)
     {
-       mesh.V[k++].p = Vec3(p[0],p[1],p[2]);
+        mesh.V[k++].p = Vec3(p[0],p[1],p[2]);
     }
 
 }
@@ -329,45 +168,32 @@ void drawSphere(Vec origin, double r, int lats, int longs) {
     int i, j;
     for(i = 0; i <= lats; i++) {
         double lat0 = M_PI * (-0.5 + (double) (i - 1) / lats);
-       double z0  = sin(lat0);
-       double zr0 =  cos(lat0);
+        double z0  = sin(lat0);
+        double zr0 =  cos(lat0);
 
-       double lat1 = M_PI * (-0.5 + (double) i / lats);
-       double z1 = sin(lat1);
-       double zr1 = cos(lat1);
+        double lat1 = M_PI * (-0.5 + (double) i / lats);
+        double z1 = sin(lat1);
+        double zr1 = cos(lat1);
 
-       glBegin(GL_QUAD_STRIP);
-       for(j = 0; j <= longs; j++) {
-           double lng = 2 * M_PI * (double) (j - 1) / longs;
-           double x = cos(lng);
-           double y = sin(lng);
+        glBegin(GL_QUAD_STRIP);
+        for(j = 0; j <= longs; j++) {
+            double lng = 2 * M_PI * (double) (j - 1) / longs;
+            double x = cos(lng);
+            double y = sin(lng);
 
-           glNormal3f(origin[0]+x * zr0,origin[1]+ y * zr0, origin[2]+z0);
-           glVertex3f(origin[0]+x * zr0,origin[1]+ y * zr0, origin[2]+z0);
-           glNormal3f(origin[0]+x * zr1,origin[1]+ y * zr1, origin[2]+z1);
-           glVertex3f(origin[0]+x * zr1,origin[1]+ y * zr1, origin[2]+z1);
-       }
-       glEnd();
-   }
- }
+            glNormal3f(origin[0]+x * zr0,origin[1]+ y * zr0, origin[2]+z0);
+            glVertex3f(origin[0]+x * zr0,origin[1]+ y * zr0, origin[2]+z0);
+            glNormal3f(origin[0]+x * zr1,origin[1]+ y * zr1, origin[2]+z1);
+            glVertex3f(origin[0]+x * zr1,origin[1]+ y * zr1, origin[2]+z1);
+        }
+        glEnd();
+    }
+}
 void Viewer::draw() {
-     glColor3d(1.,1.,1.);
+    glColor3d(1.,1.,1.);
 
-     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-     glEnable(GL_BLEND);
-     /*
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(45.0f, (float)600 / 400, 0.1, 100.);
-    glMatrixMode(GL_MODELVIEW);
-
-    //glEnable(GL_LIGHTING);
-    glEnable(GL_DEPTH_TEST);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glDepthMask(GL_TRUE);
-     */
-    //std::cout<<this->camera()->position()[0]<<" "<<this->camera()->position()[1]<<" "<<this->camera()->position()[2]<<std::endl;
-
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
 
 
     drawGrid(size,2*size);
@@ -406,61 +232,14 @@ void Viewer::draw() {
         k++;
     }
     glEnd();
-    if(selection)
-    {
-        glDisable(GL_LIGHTING);
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
 
-        glPushMatrix();
-
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        glPushMatrix();
-
-        drawSelection(0.1);
-        glMatrixMode(GL_MODELVIEW);
-    }
     update();
 
 }
 void Viewer::init() {
 
-   /*
-    modelViewMatrix.lookAt(
-        QVector3D(0.0, 0.0, 10.0), // Eye
-        QVector3D(0.0, 0.0, 0.0), // Focal Point
-        QVector3D(0.0, 1.0, 0.0)); // Up vector
-
-    // Window size is fixed at 800.0 by 600.0
-    projectionMatrix.perspective(45.0, 800.0 / 600.0, 1.0, 100.0);
-
-    QMatrix4x4 mvp = (projectionMatrix*modelViewMatrix );
-    */
-
-
-
-
     setSceneRadius(50.);
-
     setMouseTracking(true);
-
-    /*
-    auto c =this->camera();
-    auto p = c->position();
-    std::cout<<p[0]<<" "<<p[1]<<" "<<p[2]<<std::endl;
-
-
-
-
-    this->camera()->setPosition(Vec(0.,0.,-20.));
-    this->camera()->setPivotPoint(Vec(0.,0.,0.));
-    this->camera()->lookAt(Vec(0.,0.,0));
-
-    p = this->camera()->position();
-    std::cout<<p[0]<<" "<<p[1]<<" "<<p[2]<<std::endl;
-
-    */
 
     mesh.loadOFF (std::string("C:\\Users\\pups\\libqgl\\libQGLViewer-2.8.0\\examples\\simpleViewer\\models\\arma.off"));
     size = mesh.size;
@@ -484,11 +263,5 @@ void Viewer::init() {
         k++;
 
     }
-    std::cout<<"pts->"<<mesh.V[indiceTomove].p[0]<<" "<< mesh.V[indiceTomove].p[1]<<" "<<mesh.V[indiceTomove].p[2]<<std::endl;
-    // Add custom key description (see keyPressEvent).
-    setKeyDescription(Qt::Key_W, "Toggles wire frame display");
-    setKeyDescription(Qt::Key_F, "Toggles flat shading display");
-        test = Eigen::Vector3d(0.,15.,0.);
-    // glViewport(0,0,1600,600);
 }
 

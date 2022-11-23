@@ -31,38 +31,29 @@
 using namespace qglviewer;
 
 class Viewer : public QGLViewer {
-public:
-  Viewer() : wireframe_(false), flatShading_(false), grabFlag(false){};
-protected:
-  virtual void draw();
-  virtual void keyPressEvent(QKeyEvent *e);
-  //void mouseMoveEvent(QMouseEvent* const e);
-  virtual void init();
-  void drawSelection(double radius);
-  void postSelection(const QPoint &point);
-  void Grab(double radius);
-  void move();
-private :
-QOpenGLFramebufferObject* mFBO = nullptr;
-      Mesh mesh;
-      Camera* mycamera;
-      float size;
-      bool wireframe_, flatShading_;
-      bool selection;
-      bool grabFlag;
+	public:
+		Viewer() : wireframe_(false), flatShading_(false), grabFlag(false){};
+	protected:
+		virtual void draw();
+		virtual void keyPressEvent(QKeyEvent *e);
+		virtual void init();
+		void postSelection(const QPoint &point);
+		void move();
+	private :
+		Mesh mesh;
 
-      float offsetX=0.;
-      float offsetY=0.;
-     Eigen::Vector3d test;
-    double mini;
-    double maxi;
-    int indiceTomove;
-    Vec mouseVec;
-      QMatrix4x4 modelViewMatrix;
-      QMatrix4x4 projectionMatrix;
-       QPoint pixelMouse;
+		float size;
+		bool wireframe_, flatShading_;
+		bool selection;
+		bool grabFlag;
 
-        QPoint pos, prevPos;
-        bool moved;
+		float offsetX=0.;
+		float offsetY=0.;
+        Eigen::Vector3d test;
+
+		double mini;
+		double maxi;
+		int indiceTomove;
+		Vec mouseVec;
 
 };
