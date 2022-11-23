@@ -32,6 +32,7 @@
 #include <cfloat>
 #include <QtMath>
 #include <QGLViewer/camera.h>
+#include <qmessagebox.h>
 #ifdef Q_OS_WIN
 #include "gl/GLU.h"
 #else
@@ -74,7 +75,7 @@ void Viewer::keyPressEvent(QKeyEvent *e) {
           case  Qt::Key_G:
             grabFlag = !grabFlag;
             handled = true;
-                //Grab(0.5);
+            Grab(0.5);
 
           break;
           case  Qt::Key_F:
@@ -111,9 +112,35 @@ void Viewer::keyPressEvent(QKeyEvent *e) {
   if (!handled)
     QGLViewer::keyPressEvent(e);
 }
+
+void Viewer::postSelection(const QPoint &point) {
+    std::cout<<"ZFar->"<<this->camera()->zFar ()<<std::endl;
+    //auto m = event->windowPos();
+    //pixelMouse = QPoint(m.x(),m.y());
+    bool found=false;
+    //Vec
+    mouseVec = this->camera()->pointUnderPixel(point,found);
+    std::cout<<mouseVec[0]<<" "<<mouseVec[1]<<" "<<mouseVec[2]<<std::endl;
+    std::cout<<found<<std::endl;
+    /*
+    if (selectedName() == -1)
+      QMessageBox::information(this, "No selection",
+                               "No object selected under pixel " +
+                                   QString::number(point.x()) + "," +
+                                   QString::number(point.y()));
+    else
+      QMessageBox::information(
+          this, "Selection",
+          "Spiral number " + QString::number(selectedName()) +
+              " selected under pixel " + QString::number(point.x()) + "," +
+              QString::number(point.y()));*/
+}
 /*
 void Viewer::mouseMoveEvent(QMouseEvent *event)
 {
+
+    //std::cout<<p[0]<<" "<<p[1]<<" "<<p[2]<<std::endl;
+
     glEnable(GL_DEPTH_TEST);
     if(!selection)
     {
@@ -236,9 +263,9 @@ void Viewer::drawSelection(double radius) {
 }
 void Viewer::Grab(double radius) {
 
-    QPoint mousePos = QCursor::pos();
+    //QPoint mousePos = QCursor::pos();
     bool found=false;
-    auto p = mycamera->pointUnderPixel(mousePos,found);
+    auto p = mycamera->pointUnderPixel(pixelMouse,found);
     std::cout<<found<<std::endl;
     std::cout<<p[0]<<" "<<p[1]<<" "<<p[2]<<std::endl;	
 }
@@ -298,19 +325,48 @@ void Viewer::move() {
     }
 
 }
-void Viewer::draw() {
+void drawSphere(Vec origin, double r, int lats, int longs) {
+    int i, j;
+    for(i = 0; i <= lats; i++) {
+        double lat0 = M_PI * (-0.5 + (double) (i - 1) / lats);
+       double z0  = sin(lat0);
+       double zr0 =  cos(lat0);
 
+       double lat1 = M_PI * (-0.5 + (double) i / lats);
+       double z1 = sin(lat1);
+       double zr1 = cos(lat1);
+
+       glBegin(GL_QUAD_STRIP);
+       for(j = 0; j <= longs; j++) {
+           double lng = 2 * M_PI * (double) (j - 1) / longs;
+           double x = cos(lng);
+           double y = sin(lng);
+
+           glNormal3f(origin[0]+x * zr0,origin[1]+ y * zr0, origin[2]+z0);
+           glVertex3f(origin[0]+x * zr0,origin[1]+ y * zr0, origin[2]+z0);
+           glNormal3f(origin[0]+x * zr1,origin[1]+ y * zr1, origin[2]+z1);
+           glVertex3f(origin[0]+x * zr1,origin[1]+ y * zr1, origin[2]+z1);
+       }
+       glEnd();
+   }
+ }
+void Viewer::draw() {
+     glColor3d(1.,1.,1.);
+
+     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+     glEnable(GL_BLEND);
+     /*
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(45.0f, (float)600 / 400, 0.1, 100.);
     glMatrixMode(GL_MODELVIEW);
-    glColor3d(1.,1.,1.);
+
     //glEnable(GL_LIGHTING);
     glEnable(GL_DEPTH_TEST);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glDepthMask(GL_TRUE);
-
-    std::cout<<this->camera()->position()[0]<<" "<<this->camera()->position()[1]<<" "<<this->camera()->position()[2]<<std::endl;
+     */
+    //std::cout<<this->camera()->position()[0]<<" "<<this->camera()->position()[1]<<" "<<this->camera()->position()[2]<<std::endl;
 
 
 
@@ -327,9 +383,15 @@ void Viewer::draw() {
             glVertex3f (v.p[0], v.p[1], v.p[2]);
         }
     glEnd ();
+    glColor4f (1.0, 0.0, 0.0, 0.2);
+    //glVertex3f (mouseVec[0], mouseVec[1], mouseVec[2]);
+    drawSphere(mouseVec, 1., 40, 40);
+
     glPointSize(8.);
     glBegin (GL_POINTS);
     int k=0;
+
+
     for(auto v : mesh.V)
     {
         if(k!=indiceTomove)
@@ -364,7 +426,7 @@ void Viewer::draw() {
 }
 void Viewer::init() {
 
-   
+   /*
     modelViewMatrix.lookAt(
         QVector3D(0.0, 0.0, 10.0), // Eye
         QVector3D(0.0, 0.0, 0.0), // Focal Point
@@ -374,6 +436,7 @@ void Viewer::init() {
     projectionMatrix.perspective(45.0, 800.0 / 600.0, 1.0, 100.0);
 
     QMatrix4x4 mvp = (projectionMatrix*modelViewMatrix );
+    */
 
 
 
@@ -382,6 +445,7 @@ void Viewer::init() {
 
     setMouseTracking(true);
 
+    /*
     auto c =this->camera();
     auto p = c->position();
     std::cout<<p[0]<<" "<<p[1]<<" "<<p[2]<<std::endl;
@@ -396,7 +460,7 @@ void Viewer::init() {
     p = this->camera()->position();
     std::cout<<p[0]<<" "<<p[1]<<" "<<p[2]<<std::endl;
 
-    
+    */
 
     mesh.loadOFF (std::string("C:\\Users\\pups\\libqgl\\libQGLViewer-2.8.0\\examples\\simpleViewer\\models\\arma.off"));
     size = mesh.size;

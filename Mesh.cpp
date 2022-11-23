@@ -40,7 +40,7 @@ void Mesh::loadOFF (const std::string & filename) {
         maxi = std::max(maxi,v.p,compVec3);
     }
     Vec3 d = maxi-mini;
-    size = d.length();
+    size = 1.;//d.length();
     in.close ();
     centerAndScaleToUnit ();
     recomputeNormals ();

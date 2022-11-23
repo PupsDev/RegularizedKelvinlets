@@ -36,9 +36,10 @@ public:
 protected:
   virtual void draw();
   virtual void keyPressEvent(QKeyEvent *e);
-   //void mouseMoveEvent(QMouseEvent* const e);
+  //void mouseMoveEvent(QMouseEvent* const e);
   virtual void init();
   void drawSelection(double radius);
+  void postSelection(const QPoint &point);
   void Grab(double radius);
   void move();
 private :
@@ -56,6 +57,7 @@ QOpenGLFramebufferObject* mFBO = nullptr;
     double mini;
     double maxi;
     int indiceTomove;
+    Vec mouseVec;
       QMatrix4x4 modelViewMatrix;
       QMatrix4x4 projectionMatrix;
        QPoint pixelMouse;
