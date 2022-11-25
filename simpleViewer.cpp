@@ -52,6 +52,144 @@ void drawBigAxis(qreal length)
     glEnd();
     glLineWidth(1.);
 }
+Vec computeMovement(Vec mouseVec, QPoint start, QPoint end)
+{
+    double dx=0,dy=0;
+    if( (end.x() - start.x()) > 0)
+    {
+        dx += 0.1;
+    }
+    else
+    {
+        dx -= 0.1;
+    }
+    if( (end.y() - start.y()) > 0)
+    {
+        dy += 0.1;
+    }
+    else
+    {
+        dy -= 0.1;
+    }
+    //Vec ray = mouseVec - this->camera->position();
+    Vec ray(0.,1.,0.);
+    Vec x = cross	(ray, mouseVec.unit());
+    return mouseVec + dx*x  - dy*ray;
+}
+void printMatrix(GLdouble m[16])
+{
+    std::cout<<"matrix"<<std::endl;
+    for(int i = 0 ; i < 4 ; i++)
+    {
+        for(int j = 0 ; j < 4 ; j++)
+        {
+            std::cout<<m[4*i+j]<<" ";
+        }
+        std::cout<<"\n";
+    }
+    std::cout<<"matrix"<<std::endl;
+}
+void printMatrix(GLfloat m[16])
+{
+    std::cout<<"matrix"<<std::endl;
+    for(int i = 0 ; i < 4 ; i++)
+    {
+        for(int j = 0 ; j < 4 ; j++)
+        {
+            std::cout<<m[4*i+j]<<" ";
+        }
+        std::cout<<"\n";
+    }
+    std::cout<<"matrix"<<std::endl;
+}
+void Viewer::mousePressEvent(QMouseEvent* e)
+{
+    if ((e->modifiers() == Qt::ControlModifier))
+    {
+        selection = true;
+        std::cout<<"Begin1"<<std::endl;
+        QPoint point(e->pos());
+        beginSelection(point);
+        bool found;
+        mouseVec = this->camera()->pointUnderPixel(point,found);
+
+    }
+    else
+        QGLViewer::mousePressEvent(e);
+}
+void Viewer::mouseMoveEvent(QMouseEvent *e)
+{
+    if (selection)
+    {
+        std::cout<<"move1"<<std::endl;
+        QPoint point(e->pos());
+        bool found;
+        mouseVec = this->camera()->pointUnderPixel(point,found);
+
+    }
+    else if(mySelection)
+    {
+        //std::cout<<"move"<<std::endl;
+        QPoint point(e->pos());
+        std::cout<<point.x()<<" "<<point.y()<<std::endl;
+        currentMovement = point;
+        bool found;
+        startClick = currentMovement;
+        auto v = this->camera()->pointUnderPixel(point,found);
+        auto vec = v-this->camera()->position();
+        vec = vec.unit();
+
+        mouseVec = this->camera()->position() + distanceToCamera*vec;
+
+
+    }
+    else
+        QGLViewer::mouseMoveEvent(e);
+}
+void Viewer::mouseReleaseEvent(QMouseEvent* e)
+{
+    if (selection)
+    {
+         selection = false;
+         std::cout<<"End1"<<std::endl;
+         QPoint point(e->pos());
+         std::cout<<point.x()<<" "<<point.y()<<std::endl;
+         bool found;
+         mouseVec = this->camera()->pointUnderPixel(point,found);
+
+    }
+    else if(mySelection)
+    {
+         std::cout<<"End"<<std::endl;
+         QPoint point(e->pos());
+         //std::cout<<point.x()<<" "<<point.y()<<std::endl;
+         //bool found;
+         //auto v = this->camera()->pointUnderPixel(point,found);
+         //std::cout<<v[0]<<" "<<v[1]<<" "<<v[2]<<std::endl;
+
+        //glFlush();
+         mySelection = false;
+    }
+    else
+        QGLViewer::mouseReleaseEvent(e);
+}
+
+void Viewer::postSelection(const QPoint &point) {
+    bool found=false;
+   	
+    auto v = mf.position ();
+
+    mouseVec = this->camera()->pointUnderPixel(point,found);
+
+    startClick = point;
+
+    auto vec = mouseVec - this->camera()->position();
+    distanceToCamera = vec.norm();
+
+    mySelection = true;
+
+    startSelection = !startSelection;
+}
 void Viewer::keyPressEvent(QKeyEvent *e) {
     // Get event modifiers key
     const Qt::KeyboardModifiers modifiers = e->modifiers();
@@ -102,12 +240,7 @@ void Viewer::keyPressEvent(QKeyEvent *e) {
         QGLViewer::keyPressEvent(e);
     }
 
-void Viewer::postSelection(const QPoint &point) {
-    bool found=false;
-    mouseVec = this->camera()->pointUnderPixel(point,found);
-    std::cout<<mouseVec[0]<<" "<<mouseVec[1]<<" "<<mouseVec[2]<<std::endl;
-    std::cout<<found<<std::endl;
-}
+
 
 double density_fonction(double epsilon, double repsilon)
 {
@@ -209,8 +342,12 @@ void Viewer::draw() {
             glVertex3f (v.p[0], v.p[1], v.p[2]);
         }
     glEnd ();
-    glColor4f (1.0, 0.0, 0.0, 0.2);
+    if(!startSelection)
+        glColor4f (0.0, 1.0, 0.0, 0.2);
+    else
+        glColor4f (1.0, 0.0, 0.0, 0.2);
     //glVertex3f (mouseVec[0], mouseVec[1], mouseVec[2]);
+
     drawSphere(mouseVec, 1., 40, 40);
 
     glPointSize(8.);
@@ -240,6 +377,8 @@ void Viewer::init() {
 
     setSceneRadius(50.);
     setMouseTracking(true);
+     mf = ManipulatedFrame();
+     startSelection = true;
 
     mesh.loadOFF (std::string("C:\\Users\\pups\\libqgl\\libQGLViewer-2.8.0\\examples\\simpleViewer\\models\\arma.off"));
     size = mesh.size;

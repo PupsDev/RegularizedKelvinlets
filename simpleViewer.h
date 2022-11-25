@@ -28,6 +28,7 @@
 #include <QOpenGLFramebufferObject>
 #include <QOpenGLContext>
 #include <QOpenGLExtraFunctions>
+#include <QGLViewer/manipulatedFrame.h>
 using namespace qglviewer;
 
 class Viewer : public QGLViewer {
@@ -35,18 +36,31 @@ class Viewer : public QGLViewer {
 		Viewer() : wireframe_(false), flatShading_(false), grabFlag(false){};
 	protected:
 		virtual void draw();
+		void mousePressEvent(QMouseEvent* e);
+		void mouseMoveEvent(QMouseEvent *e);
+		void mouseReleaseEvent(QMouseEvent* e);
 		virtual void keyPressEvent(QKeyEvent *e);
 		virtual void init();
 		void postSelection(const QPoint &point);
 		void move();
 	private :
 		Mesh mesh;
+		
+		ManipulatedFrame	mf;
 
 		float size;
 		bool wireframe_, flatShading_;
 		bool selection;
+        bool mySelection;
+        bool startSelection;
 		bool grabFlag;
 
+		QPoint startClick;
+		QPoint currentMovement;
+        double distanceToCamera;
+
+        GLdouble thisMatrix[16];
+		
 		float offsetX=0.;
 		float offsetY=0.;
         Eigen::Vector3d test;
