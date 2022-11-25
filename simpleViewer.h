@@ -39,10 +39,11 @@ class Viewer : public QGLViewer {
 		void mousePressEvent(QMouseEvent* e);
 		void mouseMoveEvent(QMouseEvent *e);
 		void mouseReleaseEvent(QMouseEvent* e);
+        void wheelEvent(QWheelEvent *event);
 		virtual void keyPressEvent(QKeyEvent *e);
 		virtual void init();
 		void postSelection(const QPoint &point);
-		void move();
+		void move(Eigen::Vector3d force);
 	private :
 		Mesh mesh;
 		
@@ -54,6 +55,8 @@ class Viewer : public QGLViewer {
         bool mySelection;
         bool startSelection;
 		bool grabFlag;
+
+        double radiusBall = 1.;
 
 		QPoint startClick;
 		QPoint currentMovement;
@@ -68,6 +71,10 @@ class Viewer : public QGLViewer {
 		double mini;
 		double maxi;
 		int indiceTomove;
-		Vec mouseVec;
+
+
+		Vec startHandler;
+		Vec currentHandler;
+		Vec endHandler;
 
 };

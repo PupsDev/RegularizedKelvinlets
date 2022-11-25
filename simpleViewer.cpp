@@ -52,7 +52,7 @@ void drawBigAxis(qreal length)
     glEnd();
     glLineWidth(1.);
 }
-Vec computeMovement(Vec mouseVec, QPoint start, QPoint end)
+Vec computeMovement(Vec startHandler, QPoint start, QPoint end)
 {
     double dx=0,dy=0;
     if( (end.x() - start.x()) > 0)
@@ -71,10 +71,10 @@ Vec computeMovement(Vec mouseVec, QPoint start, QPoint end)
     {
         dy -= 0.1;
     }
-    //Vec ray = mouseVec - this->camera->position();
+    //Vec ray = startHandler - this->camera->position();
     Vec ray(0.,1.,0.);
-    Vec x = cross	(ray, mouseVec.unit());
-    return mouseVec + dx*x  - dy*ray;
+    Vec x = cross	(ray, startHandler.unit());
+    return startHandler + dx*x  - dy*ray;
 }
 void printMatrix(GLdouble m[16])
 {
@@ -111,7 +111,7 @@ void Viewer::mousePressEvent(QMouseEvent* e)
         QPoint point(e->pos());
         beginSelection(point);
         bool found;
-        mouseVec = this->camera()->pointUnderPixel(point,found);
+        startHandler = this->camera()->pointUnderPixel(point,found);
 
     }
     else
@@ -121,17 +121,18 @@ void Viewer::mouseMoveEvent(QMouseEvent *e)
 {
     if (selection)
     {
-        std::cout<<"move1"<<std::endl;
+        /*std::cout<<"move1"<<std::endl;
         QPoint point(e->pos());
         bool found;
-        mouseVec = this->camera()->pointUnderPixel(point,found);
+        startHandler = this->camera()->pointUnderPixel(point,found);
+        */
 
     }
     else if(mySelection)
     {
         //std::cout<<"move"<<std::endl;
         QPoint point(e->pos());
-        std::cout<<point.x()<<" "<<point.y()<<std::endl;
+        //std::cout<<point.x()<<" "<<point.y()<<std::endl;
         currentMovement = point;
         bool found;
         startClick = currentMovement;
@@ -139,7 +140,14 @@ void Viewer::mouseMoveEvent(QMouseEvent *e)
         auto vec = v-this->camera()->position();
         vec = vec.unit();
 
-        mouseVec = this->camera()->position() + distanceToCamera*vec;
+        endHandler = this->camera()->position() + distanceToCamera*vec;
+        Vec delta = endHandler - currentHandler;
+
+        move(Eigen::Vector3d(delta[0],delta[1],delta[2]));
+        currentHandler = endHandler;
+        auto vec2 = currentHandler - this->camera()->position();
+        distanceToCamera = vec2.norm();
+        
 
 
     }
@@ -155,7 +163,7 @@ void Viewer::mouseReleaseEvent(QMouseEvent* e)
          QPoint point(e->pos());
          std::cout<<point.x()<<" "<<point.y()<<std::endl;
          bool found;
-         mouseVec = this->camera()->pointUnderPixel(point,found);
+         startHandler = this->camera()->pointUnderPixel(point,found);
 
     }
     else if(mySelection)
@@ -168,22 +176,29 @@ void Viewer::mouseReleaseEvent(QMouseEvent* e)
          //std::cout<<v[0]<<" "<<v[1]<<" "<<v[2]<<std::endl;
 
         //glFlush();
+
+
          mySelection = false;
     }
     else
         QGLViewer::mouseReleaseEvent(e);
 }
+void Viewer::wheelEvent(QWheelEvent *event)
+{
+    double angle = event->angleDelta().y();
 
+    radiusBall += angle/120;
+    std::cout<<"radiusBall "<<radiusBall<<std::endl;
+}
 void Viewer::postSelection(const QPoint &point) {
     bool found=false;
    	
-    auto v = mf.position ();
-
-    mouseVec = this->camera()->pointUnderPixel(point,found);
+    startHandler = this->camera()->pointUnderPixel(point,found);
 
     startClick = point;
 
-    auto vec = mouseVec - this->camera()->position();
+    auto vec = startHandler - this->camera()->position();
+    currentHandler = startHandler;
     distanceToCamera = vec.norm();
 
     mySelection = true;
@@ -230,7 +245,7 @@ void Viewer::keyPressEvent(QKeyEvent *e) {
         }
         if(handled)
         {
-        move();
+        //move();
         update();
         }
     }
@@ -255,21 +270,24 @@ Eigen::Vector3d force_u()
 
 //return test;
 }
-void Viewer::move() {
+void Viewer::move(Eigen::Vector3d force) {
     double mu = 1.;
-    double v = 0.5;
+    double v = -1000000000;
     double a = 1./(4*M_PI*mu);
     double b = a / (4*(1.-v));
-    double epsilon = 2.;
+    double epsilon = radiusBall;
     //double radius = 1.;
     //double repsilon =r_epsilon(radius,epsilon);
+    std::cout<<"force"<<force[0]<<" "<<force[1]<<" "<<force[2]<<std::endl;
+    force = 50.*radiusBall*force;
+    std::cout<<"force"<<force[0]<<" "<<force[1]<<" "<<force[2]<<std::endl;
     std::vector<Eigen::Vector3d> points;
     for(auto vertex : mesh.V)
     {
         points.push_back(Eigen::Vector3d(vertex.p[0],vertex.p[1],vertex.p[2]));
     }
     auto identity = Eigen::Matrix3d::Identity();
-    Eigen::Vector3d x0 = points[indiceTomove];
+    Eigen::Vector3d x0 = Eigen::Vector3d(startHandler[0],startHandler[1],startHandler[2]);//points[indiceTomove];
 
     for(int i = 0 ; i < points.size(); i++ )
     {
@@ -285,7 +303,7 @@ void Viewer::move() {
         
         auto Kef = first + second*rrt + last;
 
-        Eigen::Vector3d f = density_fonction(epsilon, repsilon) * test;
+        Eigen::Vector3d f = density_fonction(epsilon, repsilon) * force;
         Eigen::Vector3d uForce = Kef * f;
 
         points[i]+=uForce;
@@ -315,19 +333,21 @@ void drawSphere(Vec origin, double r, int lats, int longs) {
             double y = sin(lng);
 
             glNormal3f(origin[0]+x * zr0,origin[1]+ y * zr0, origin[2]+z0);
-            glVertex3f(origin[0]+x * zr0,origin[1]+ y * zr0, origin[2]+z0);
+            glVertex3f(origin[0]+x * zr0*r,origin[1]+ y * zr0*r, origin[2]+z0*r);
             glNormal3f(origin[0]+x * zr1,origin[1]+ y * zr1, origin[2]+z1);
-            glVertex3f(origin[0]+x * zr1,origin[1]+ y * zr1, origin[2]+z1);
+            glVertex3f(origin[0]+x * zr1*r,origin[1]+ y * zr1*r, origin[2]+z1*r);
         }
         glEnd();
     }
 }
 void Viewer::draw() {
+
     glColor3d(1.,1.,1.);
 
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
 
+    glEnable(GL_LIGHTING);
 
     drawGrid(size,2*size);
     //drawBigAxis(20.);
@@ -342,22 +362,23 @@ void Viewer::draw() {
             glVertex3f (v.p[0], v.p[1], v.p[2]);
         }
     glEnd ();
-    if(!startSelection)
+    /*if(!startSelection)
         glColor4f (0.0, 1.0, 0.0, 0.2);
     else
         glColor4f (1.0, 0.0, 0.0, 0.2);
-    //glVertex3f (mouseVec[0], mouseVec[1], mouseVec[2]);
+        */
+    //glVertex3f (startHandler[0], startHandler[1], startHandler[2]);
 
-    drawSphere(mouseVec, 1., 40, 40);
-
+     glDisable(GL_LIGHTING);
     glPointSize(8.);
     glBegin (GL_POINTS);
     int k=0;
 
-
+    //glDisable(GL_LIGHTING);
     for(auto v : mesh.V)
     {
-        if(k!=indiceTomove)
+        Vec vToSphere = startHandler-Vec(v.p[0],v.p[1],v.p[2]);
+        if(vToSphere.norm()>radiusBall)
         {
             glColor3f(	0.,0.0,1.);
         }
@@ -365,10 +386,16 @@ void Viewer::draw() {
         {
             glColor3f(	0.,1.0,0.);
         }
-        glVertex3f (v.p[0]+0.005*v.p[0], v.p[1]+0.005*v.p[1], v.p[2]+0.005*v.p[2]);
+        double offset =0.005;
+        glVertex3f (v.p[0]+offset*v.n[0], v.p[1]+offset*v.n[1], v.p[2]+offset*v.n[2]);
         k++;
     }
     glEnd();
+    glColor4f (0.0, 1.0, 0.0, 0.2);
+    drawSphere(startHandler, radiusBall, 40, 40);
+     glColor4f (1.0, 0.0, 0.0, 0.2);
+    drawSphere(currentHandler, radiusBall, 40, 40);
+    //glEnable(GL_LIGHTING);
 
     update();
 
@@ -402,5 +429,31 @@ void Viewer::init() {
         k++;
 
     }
+    GLfloat light_position[] = { 0.0, 0.0, 10.0, 0.0 };
+    GLfloat light_position2[] = { 0.0, 0.0, 10.0, 0.0 };
+
+    GLfloat light_diffuse[] = { 1.0, 0.0, 0.0, 0.0 };
+
+    glLightfv(GL_LIGHT1, GL_POSITION, light_position);
+    glLightfv(GL_LIGHT2, GL_POSITION, light_position2);
+
+    glEnable(GL_LIGHTING);
+
+    GLfloat cyan[] = {0.f, .8f, .8f, 1.f};
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, cyan);
+    //cyan[] = {0.f, .8f, .8f, 1.f};
+    glMaterialfv(GL_FRONT, GL_DIFFUSE, cyan);
+
+    glLightfv(GL_LIGHT1, GL_DIFFUSE, light_diffuse);
+    glLightfv(GL_LIGHT2, GL_DIFFUSE, light_diffuse);
+
+    this->camera()->setPosition(Vec(0.,0.,-20.));
+     this->camera()->setViewDirection(Vec(0.,0.,1.));
+
+    startHandler  = Vec(0.,0.,0.);
+    currentHandler  = Vec(0.,0.,0.);
+    //glEnable(GL_LIGHT1);
+    //glEnable(GL_LIGHT2);
+
 }
 
