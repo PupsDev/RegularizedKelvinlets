@@ -270,43 +270,119 @@ Eigen::Vector3d force_u()
 
 //return test;
 }
+typedef struct KelvinParameters
+{
+    Eigen::Vector3d x0;
+    Eigen::Vector3d x;
+    double a,b,c;
+    double epsilon;
+    Eigen::Vector3d force;
+    double dt;
+
+}KelvinParameters;
+typedef struct KelvinResult
+{
+    Eigen::Matrix3d force;
+    double density;
+}KelvinResult;
+
+ Eigen::Vector3d computeKelvin(double t, Eigen::Vector3d x, KelvinParameters parameters)
+{
+    auto identity = Eigen::Matrix3d::Identity();
+    Eigen::Vector3d rvector =   x- parameters.x0;
+    double radius = rvector.norm();
+    double repsilon =r_epsilon(radius,parameters.epsilon);
+    double repsilon3=repsilon*repsilon*repsilon;
+
+    auto first = ((parameters.a-parameters.b)*1./repsilon)*identity;
+    auto second = parameters.b/(repsilon3);
+    auto last = ((parameters.a*parameters.epsilon*parameters.epsilon)/(2*repsilon3))*identity;
+    
+    Eigen::Matrix3d rrt = rvector * rvector.transpose();
+    
+    
+    auto density= density_fonction(parameters.epsilon, repsilon);
+    auto force = first + second*rrt + last;
+    Eigen::Vector3d f =  parameters.force;
+    return force * f;
+}
+Eigen::Vector3d compute(double t, Eigen::Vector3d x ,Eigen::Vector3d x0 )
+{
+    return (x0-x)/2;
+}
+Eigen::Vector3d rungeKutta( Eigen::Vector3d x,KelvinParameters  parameters,  float h)
+{
+    //Eigen::Vector3d xx0 = (x - parameters.x0);
+    //Eigen::Vector3d x0 = Eigen::Vector3d(0.,1.,1.);
+    Eigen::Vector3d xx0 = ( parameters.x0-x );
+    h = 0.1;
+    int n = 1;
+  
+    Eigen::Vector3d k1, k2, k3, k4, k5;
+  
+    double t = 0;
+    for (int i=1; i<=n; i++)
+    {
+        
+        k1 = computeKelvin(t, x,parameters);
+        k2 = computeKelvin(t+ 0.5*h, x + 0.5*h*k1,parameters);
+        k3 = computeKelvin(t + 0.5*h, x + 0.5*h*k2,parameters);
+        k4 = computeKelvin(t + h, x + h*k3,parameters);
+        
+       /*
+        k1 =   compute(t, x,x0);
+        k2 =   compute(t+ 0.5*h, x + 0.5*h*k1,x0);
+        k3 =   compute(t + 0.5*h, x + 0.5*h*k2,x0);
+        k4 =   compute(t + h, x + h*k3,x0);
+        */
+
+        x = x + ((1.0*h)/6.0)*(k1 + 2*k2 + 2*k3 + k4);
+        //x=k1;
+        //std::cout<<"x->"<<x<<std::endl;
+        t = t + h;
+    }
+  
+    return x;
+}
 void Viewer::move(Eigen::Vector3d force) {
     double mu = 1.;
-    double v = -1000000000;
+    double v = 0.4;
     double a = 1./(4*M_PI*mu);
     double b = a / (4*(1.-v));
+    double c = 2 / (3 * a - 2 * b);
     double epsilon = radiusBall;
     //double radius = 1.;
-    //double repsilon =r_epsilon(radius,epsilon);
+    if(std::isnan(force[0]))
+    {
+        force = Eigen::Vector3d(0.,0.,0.);
+    }
+    //double repsilon =r_epsilon(radius,parameters.epsilon);
     std::cout<<"force"<<force[0]<<" "<<force[1]<<" "<<force[2]<<std::endl;
-    force = 50.*radiusBall*force;
+    //force = 50.*force;
     std::cout<<"force"<<force[0]<<" "<<force[1]<<" "<<force[2]<<std::endl;
     std::vector<Eigen::Vector3d> points;
     for(auto vertex : mesh.V)
     {
         points.push_back(Eigen::Vector3d(vertex.p[0],vertex.p[1],vertex.p[2]));
     }
-    auto identity = Eigen::Matrix3d::Identity();
+
     Eigen::Vector3d x0 = Eigen::Vector3d(startHandler[0],startHandler[1],startHandler[2]);//points[indiceTomove];
 
+    KelvinParameters  parameters;
+    parameters.x0 = x0;
+    parameters.a=a;
+    parameters.b=b;
+    parameters.c=c;
+    parameters.epsilon;
+    parameters.force = force;
+    
     for(int i = 0 ; i < points.size(); i++ )
     {
-        Eigen::Vector3d rvector = x0 - points[i];
-        double radius = rvector.norm();
-        double repsilon =r_epsilon(radius,epsilon);
+        double t = 0;
+        auto dforce = computeKelvin(t, points[i], parameters);
+        //auto dforce = rungeKutta(points[i],parameters,  0.1);
 
-        auto first = ((a-b)*1./repsilon)*identity;
-        auto second = b/(repsilon*repsilon*repsilon);
-        auto last = ((a*epsilon*epsilon)/(2*repsilon*repsilon*repsilon))*identity;
-        
-        Eigen::Matrix3d rrt = rvector * rvector.transpose();
-        
-        auto Kef = first + second*rrt + last;
-
-        Eigen::Vector3d f = density_fonction(epsilon, repsilon) * force;
-        Eigen::Vector3d uForce = Kef * f;
-
-        points[i]+=uForce;
+        points[i]+=dforce;
     }
     int k =0;
     for(auto p : points)
@@ -452,6 +528,9 @@ void Viewer::init() {
 
     startHandler  = Vec(0.,0.,0.);
     currentHandler  = Vec(0.,0.,0.);
+
+    //Eigen::Vector3d v =  rungeKutta( Eigen::Vector3d(0.,0.,0.),  0.1f);
+    //std::cout<<"v->"<<v<<std::endl;
     //glEnable(GL_LIGHT1);
     //glEnable(GL_LIGHT2);
 
