@@ -26,6 +26,7 @@ WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #include <QMap>
 #include <QMenu>
 #include <QPoint>
+#include <QDebug>
 #include <QMouseEvent>
 #include <QCursor>
 #include <limits>
@@ -38,6 +39,9 @@ WARRANTY OF DESIGN, MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
 #else
 #include <glu.h>
 #endif
+
+#include <chrono>
+using namespace std::chrono;
 using namespace std;
 
 const float dy = 3.;
@@ -237,6 +241,7 @@ void Viewer::keyPressEvent(QKeyEvent *e) {
             if(offsetY<0)
             offsetY*=-1;
                 test[1]+=dy;
+            move(Eigen::Vector3d(0.,0.,0));
             handled = true;
             break;
         case Qt::Key_Down:
@@ -257,11 +262,11 @@ void Viewer::keyPressEvent(QKeyEvent *e) {
 
 
 
-double density_fonction(double epsilon, double repsilon)
+constexpr double density_fonction(const double epsilon, const double repsilon)
 {
     return (15*pow(epsilon,4)/(8*M_PI))/(pow(repsilon,7));
 }
-double r_epsilon(double radius,double epsilon)
+constexpr double r_epsilon(const double radius,const double epsilon)
 {
     return  sqrt(radius*radius + epsilon*epsilon);
 }
@@ -286,48 +291,73 @@ typedef struct KelvinResult
     double density;
 }KelvinResult;
 
- Eigen::Vector3d computeKelvin(double t, Eigen::Vector3d x, KelvinParameters parameters)
+ Eigen::Vector3d computeKelvin(double t, Eigen::Vector3d x, const KelvinParameters& parameters)
 {
-    auto identity = Eigen::Matrix3d::Identity();
-    Eigen::Vector3d rvector =   x- parameters.x0;
-    double radius = rvector.norm();
-    double repsilon =r_epsilon(radius,parameters.epsilon);
-    double repsilon3=repsilon*repsilon*repsilon;
+    const auto identity = Eigen::Matrix3d::Identity();
+    const Eigen::Vector3d rvector =   x- parameters.x0;
+    const double radius = rvector.norm();
+    const double repsilon =r_epsilon(radius,parameters.epsilon);
+    //std::cout<<"repsilon "<<parameters.epsilon<<std::endl;
+    const double repsilon3=repsilon*repsilon*repsilon;
 
-    auto first = ((parameters.a-parameters.b)*1./repsilon)*identity;
-    auto second = parameters.b/(repsilon3);
-    auto last = ((parameters.a*parameters.epsilon*parameters.epsilon)/(2*repsilon3))*identity;
+    const auto first = ((parameters.a-parameters.b)*1./repsilon)*identity;
+    const auto second = parameters.b/(repsilon3);
+    const auto last = ((parameters.a*parameters.epsilon*parameters.epsilon)/(2*repsilon3))*identity;
     
-    Eigen::Matrix3d rrt = rvector * rvector.transpose();
+    const Eigen::Matrix3d rrt = rvector * rvector.transpose();
     
     
-    auto density= density_fonction(parameters.epsilon, repsilon);
-    auto force = first + second*rrt + last;
-    Eigen::Vector3d f =  parameters.force;
-    return force * f;
+    const auto density= density_fonction(parameters.epsilon, repsilon);
+    const auto force = first + second*rrt + last;
+    const Eigen::Vector3d f =  density*50.*parameters.force;
+    const auto delta = force * f;
+    //const Eigen::Vector3d dvector = Eigen::Vector3d(delta[0],delta[1],delta[2]);
+    //std::cout<<"dvector"<<dvector[0]<<" "<<dvector[1]<<" "<<dvector[2]<<std::endl;
+    /*
+    if(std::isnan(dvector[0]))
+    {
+        dvector = Eigen::Vector3d(0.,0.,0.);
+    }*/
+    return delta;
 }
 Eigen::Vector3d compute(double t, Eigen::Vector3d x ,Eigen::Vector3d x0 )
 {
     return (x0-x)/2;
 }
-Eigen::Vector3d rungeKutta( Eigen::Vector3d x,KelvinParameters  parameters,  float h)
+Eigen::Vector3d rungeKutta( Eigen::Vector3d x,const KelvinParameters&  parameters,  float h)
 {
     //Eigen::Vector3d xx0 = (x - parameters.x0);
     //Eigen::Vector3d x0 = Eigen::Vector3d(0.,1.,1.);
-    Eigen::Vector3d xx0 = ( parameters.x0-x );
-    h = 0.1;
-    int n = 1;
-  
+    //Eigen::Vector3d xx0 = ( parameters.x0-x );
+    //h = 0.1;
+    const int n = static_cast<int>(1./h);
     Eigen::Vector3d k1, k2, k3, k4, k5;
   
     double t = 0;
+    auto start = high_resolution_clock::now();
     for (int i=1; i<=n; i++)
     {
-        
+
+        auto startk0 = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(startk0 - start);
+        //cout << "Time taken by k0: "<< duration.count() << " microseconds" << endl;
+
         k1 = computeKelvin(t, x,parameters);
+         auto startk1 = high_resolution_clock::now();
+         duration = duration_cast<microseconds>(startk1 - startk0);
+         //cout << "Time taken by k1: "<< duration.count() << " microseconds" << endl;
         k2 = computeKelvin(t+ 0.5*h, x + 0.5*h*k1,parameters);
+         auto startk2 = high_resolution_clock::now();
+         duration = duration_cast<microseconds>(startk2 - startk1);
+         //cout << "Time taken by k2: "<< duration.count() << " microseconds" << endl;
         k3 = computeKelvin(t + 0.5*h, x + 0.5*h*k2,parameters);
+         auto startk3 = high_resolution_clock::now();
+         duration = duration_cast<microseconds>(startk3 - startk2);
+         //cout << "Time taken by k3: "<< duration.count() << " microseconds" << endl;
         k4 = computeKelvin(t + h, x + h*k3,parameters);
+         auto startk4 = high_resolution_clock::now();
+         duration = duration_cast<microseconds>(startk4 - startk3);
+         //cout << "Time taken by k4: "<< duration.count() << " microseconds" << endl;
         
        /*
         k1 =   compute(t, x,x0);
@@ -335,21 +365,24 @@ Eigen::Vector3d rungeKutta( Eigen::Vector3d x,KelvinParameters  parameters,  flo
         k3 =   compute(t + 0.5*h, x + 0.5*h*k2,x0);
         k4 =   compute(t + h, x + h*k3,x0);
         */
-
-        x = x + ((1.0*h)/6.0)*(k1 + 2*k2 + 2*k3 + k4);
+        Eigen::Vector3d delta = ((1.0*h)/6.0)*(k1 + 2*k2 + 2*k3 + k4);
+        x = x + delta;
         //x=k1;
         //std::cout<<"x->"<<x<<std::endl;
         t = t + h;
     }
+    auto startk5 = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(startk5 - start);
+    //cout << "Time taken by Runge: "<< duration.count() << " microseconds" << endl;
   
     return x;
 }
 void Viewer::move(Eigen::Vector3d force) {
-    double mu = 1.;
-    double v = 0.4;
-    double a = 1./(4*M_PI*mu);
-    double b = a / (4*(1.-v));
-    double c = 2 / (3 * a - 2 * b);
+    constexpr double mu = 1.;
+    constexpr double v = 0.4;
+    constexpr double a = 1./(4*M_PI*mu);
+    constexpr double b = a / (4*(1.-v));
+    constexpr double c = 2 / (3 * a - 2 * b);
     double epsilon = radiusBall;
     //double radius = 1.;
     if(std::isnan(force[0]))
@@ -361,34 +394,51 @@ void Viewer::move(Eigen::Vector3d force) {
     //force = 50.*force;
     std::cout<<"force"<<force[0]<<" "<<force[1]<<" "<<force[2]<<std::endl;
     std::vector<Eigen::Vector3d> points;
+
     for(auto vertex : mesh.V)
     {
         points.push_back(Eigen::Vector3d(vertex.p[0],vertex.p[1],vertex.p[2]));
     }
 
-    Eigen::Vector3d x0 = Eigen::Vector3d(startHandler[0],startHandler[1],startHandler[2]);//points[indiceTomove];
 
+    Eigen::Vector3d x0 = Eigen::Vector3d(startHandler[0],startHandler[1],startHandler[2]);//points[indiceTomove];
+    //std::cout<<"size "<<mesh.vertex.size()<<std::endl;
+    //Eigen::Vector3d x0 = points[indiceTomove];
+    //force = Eigen::Vector3d(0.,1.,0.);
     KelvinParameters  parameters;
     parameters.x0 = x0;
     parameters.a=a;
     parameters.b=b;
     parameters.c=c;
-    parameters.epsilon;
+    parameters.epsilon = epsilon;
     parameters.force = force;
     
-    for(int i = 0 ; i < points.size(); i++ )
+    //int k =0;
+    auto start = high_resolution_clock::now();
+    std::cout<<"Mesh size :"<<points.size()<<std::endl;
+    #pragma omp parallel num_threads(8)
     {
-        double t = 0;
-        auto dforce = computeKelvin(t, points[i], parameters);
-        //auto dforce = rungeKutta(points[i],parameters,  0.1);
+        #pragma omp for
+        for(auto &p : points)
+        {
+            //double t = 0;
+            //auto dforce = computeKelvin(t, p, parameters);
+            //p+=dforce;
 
-        points[i]+=dforce;
+            p = rungeKutta(p,parameters,  .5);
+            //std::cout<<"p after "<<p[0]<<" "<<p[1]<<" "<<p[2]<<std::endl;
+        }
     }
+    auto startk5 = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(startk5 - start);
+    cout << "Time taken by Runge: "<< duration.count() << " microseconds" << endl;
+
     int k =0;
     for(auto p : points)
     {
         mesh.V[k++].p = Vec3(p[0],p[1],p[2]);
     }
+
 
 }
 void drawSphere(Vec origin, double r, int lats, int longs) {
@@ -434,6 +484,7 @@ void Viewer::draw() {
     for (unsigned int i = 0; i < mesh.T.size (); i++)
         for (unsigned int j = 0; j < 3; j++) {
             const MeshVertex & v = mesh.V[mesh.T[i].v[j]];
+            //const MeshVertex & vert = mesh.[mesh.T[i].v[j]];
             glNormal3f (v.n[0], v.n[1], v.n[2]);
             glVertex3f (v.p[0], v.p[1], v.p[2]);
         }
@@ -483,7 +534,7 @@ void Viewer::init() {
      mf = ManipulatedFrame();
      startSelection = true;
 
-    mesh.loadOFF (std::string("C:\\Users\\pups\\libqgl\\libQGLViewer-2.8.0\\examples\\simpleViewer\\models\\arma.off"));
+    mesh.loadOFF (std::string("C:\\Users\\pups\\libqgl\\libQGLViewer-2.8.0\\examples\\simpleViewer\\models\\tentacle2.off"));
     size = mesh.size;
     mini = FLT_MAX;
     maxi = -FLT_MAX;

@@ -13,5 +13,6 @@ TARGET   = simpleViewer
 
 HEADERS  = simpleViewer.h Mesh.h Vec3.h
 SOURCES  = simpleViewer.cpp Mesh.cpp main.cpp
-
+QMAKE_CXXFLAGS += -fopenmp
+LIBS += -fopenmp
 include( ../examples.pri )

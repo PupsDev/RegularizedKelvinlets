@@ -24,7 +24,7 @@
 #include <QMatrix4x4>
 #include <Mesh.h>
 #include <QGLViewer/camera.h>
-#include "Eigen/Dense"
+
 #include <QOpenGLFramebufferObject>
 #include <QOpenGLContext>
 #include <QOpenGLExtraFunctions>

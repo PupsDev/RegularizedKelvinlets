@@ -43,9 +43,24 @@ void Mesh::loadOFF (const std::string & filename) {
     size = 1.;//d.length();
     in.close ();
     centerAndScaleToUnit ();
+    //catmullClark();
     recomputeNormals ();
+
+    for(auto v : V)
+    {
+        vertex.push_back(Eigen::Vector3d(v.p[0],v.p[1],v.p[2]));
+        //std::cout<<"force"<<v[0]<<" "<<v[1]<<" "<<v[2]<<std::endl;
+    }
 }
 
+void Mesh::catmullClark()
+{
+    for (unsigned int i = 0; i < T.size (); i++) {
+        Vec3 centroid = 1./3. * (V[T[i].v[0]].p+V[T[i].v[1]].p+V[T[i].v[2]].p);
+    
+    }
+
+}
 void Mesh::recomputeNormals () {
     for (unsigned int i = 0; i < V.size (); i++)
         V[i].n = Vec3 (0.0, 0.0, 0.0);

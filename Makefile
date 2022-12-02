@@ -188,6 +188,7 @@ Makefile: simpleViewer.pro E:/Qt/6.4.0/mingw_64/mkspecs/win32-g++/qmake.conf E:/
 		E:/Qt/6.4.0/mingw_64/mkspecs/features/qt_config.prf \
 		E:/Qt/6.4.0/mingw_64/mkspecs/win32-g++/qmake.conf \
 		E:/Qt/6.4.0/mingw_64/mkspecs/features/spec_post.prf \
+		.qmake.stash \
 		E:/Qt/6.4.0/mingw_64/mkspecs/features/exclusive_builds.prf \
 		E:/Qt/6.4.0/mingw_64/mkspecs/features/toolchain.prf \
 		E:/Qt/6.4.0/mingw_64/mkspecs/features/default_pre.prf \
@@ -221,7 +222,6 @@ Makefile: simpleViewer.pro E:/Qt/6.4.0/mingw_64/mkspecs/win32-g++/qmake.conf E:/
 		E:/Qt/6.4.0/mingw_64/lib/Qt6Gui.prl \
 		E:/Qt/6.4.0/mingw_64/lib/Qt6Xml.prl \
 		E:/Qt/6.4.0/mingw_64/lib/Qt6Core.prl \
-		.qmake.stash \
 		E:/Qt/6.4.0/mingw_64/mkspecs/features/build_pass.prf
 	$(QMAKE) -o Makefile simpleViewer.pro -spec win32-g++ "CONFIG+=debug" "CONFIG+=qml_debug"
 E:/Qt/6.4.0/mingw_64/mkspecs/features/spec_pre.prf:
@@ -342,6 +342,7 @@ E:/Qt/6.4.0/mingw_64/mkspecs/features/qt_functions.prf:
 E:/Qt/6.4.0/mingw_64/mkspecs/features/qt_config.prf:
 E:/Qt/6.4.0/mingw_64/mkspecs/win32-g++/qmake.conf:
 E:/Qt/6.4.0/mingw_64/mkspecs/features/spec_post.prf:
+.qmake.stash:
 E:/Qt/6.4.0/mingw_64/mkspecs/features/exclusive_builds.prf:
 E:/Qt/6.4.0/mingw_64/mkspecs/features/toolchain.prf:
 E:/Qt/6.4.0/mingw_64/mkspecs/features/default_pre.prf:
@@ -375,7 +376,6 @@ E:/Qt/6.4.0/mingw_64/lib/Qt6Widgets.prl:
 E:/Qt/6.4.0/mingw_64/lib/Qt6Gui.prl:
 E:/Qt/6.4.0/mingw_64/lib/Qt6Xml.prl:
 E:/Qt/6.4.0/mingw_64/lib/Qt6Core.prl:
-.qmake.stash:
 E:/Qt/6.4.0/mingw_64/mkspecs/features/build_pass.prf:
 qmake: FORCE
 	@$(QMAKE) -o Makefile simpleViewer.pro -spec win32-g++ "CONFIG+=debug" "CONFIG+=qml_debug"

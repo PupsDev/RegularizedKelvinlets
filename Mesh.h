@@ -1,7 +1,7 @@
 #ifndef MESH_H
 #define MESH_H
 
-
+#include "Eigen/Dense"
 #include <vector>
 #include <string>
 #include "Vec3.h"
@@ -69,9 +69,12 @@ class Mesh {
 public:
     std::vector<MeshVertex> V;
     std::vector<MeshTriangle> T;
+    std::vector<Eigen::Vector3d> vertex;
     float size;
     void loadOFF (const std::string & filename);
     void recomputeNormals ();
+    void catmullClark();
+
     void centerAndScaleToUnit ();
     void scaleUnit ();
 
