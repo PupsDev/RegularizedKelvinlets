@@ -30,10 +30,25 @@
 #include <QOpenGLExtraFunctions>
 #include <QGLViewer/manipulatedFrame.h>
 using namespace qglviewer;
+typedef struct KelvinParameters
+{
+    Eigen::Vector3d x0;
+    Eigen::Vector3d x;
+    double a,b,c;
+    double epsilon;
+    Eigen::Vector3d force;
+    double dt;
+
+}KelvinParameters;
+typedef struct KelvinResult
+{
+    Eigen::Matrix3d force;
+    double density;
+}KelvinResult;
 
 class Viewer : public QGLViewer {
 	public:
-		Viewer() : wireframe_(false), flatShading_(false), grabFlag(false){};
+        Viewer() : wireframe_(false), flatShading_(false), hideFlag(true), grabFlag(false){};
 	protected:
 		virtual void draw();
 		void mousePressEvent(QMouseEvent* e);
@@ -44,6 +59,8 @@ class Viewer : public QGLViewer {
 		virtual void init();
 		void postSelection(const QPoint &point);
 		void move(Eigen::Vector3d force);
+
+         Eigen::Vector3d rungeKutta( Eigen::Vector3d x,int index,const KelvinParameters&  parameters,  float h);
 	private :
 		Mesh mesh;
 		
@@ -55,6 +72,7 @@ class Viewer : public QGLViewer {
         bool mySelection;
         bool startSelection;
 		bool grabFlag;
+        bool hideFlag;
 
         double radiusBall = 1.;
 
@@ -67,6 +85,10 @@ class Viewer : public QGLViewer {
 		float offsetX=0.;
 		float offsetY=0.;
         Eigen::Vector3d test;
+
+		// Runge-Kutta vectors
+		// a vector of point per point
+		std::vector<std::vector<Eigen::Vector3d>> rungePoints;
 
 		double mini;
 		double maxi;
