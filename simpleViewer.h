@@ -37,6 +37,7 @@ typedef struct KelvinParameters
     double a,b,c;
     double epsilon;
     Eigen::Vector3d force;
+    Eigen::Vector3d axis;
     double dt;
 
 }KelvinParameters;

@@ -301,10 +301,28 @@ Eigen::Matrix3d computeKelvinForce(double t, Eigen::Vector3d x, const KelvinPara
    const auto force = first + second*rrt + last;
    return force;
 }
-enum BRUSH_TYPE {SINGLE_SCALE,BI_SCALE,TRI_SCALE};
+Eigen::Vector3d computeKelvinTwist(double t, Eigen::Vector3d x, const KelvinParameters& parameters)
+{
+    const auto identity = Eigen::Matrix3d::Identity();
+    const Eigen::Vector3d rvector =   x- parameters.x0;
+    const double radius = rvector.norm();
+    const double repsilon =r_epsilon(radius,parameters.epsilon);
+    const double repsilon3=repsilon*repsilon*repsilon;
+
+    double epsilon2 = parameters.epsilon*parameters.epsilon;
+
+    auto qxr = rvector.cross(parameters.force);
+
+    double scaleFactor = 10.;
+    return -scaleFactor*parameters.a*(1/repsilon3 + (3*epsilon2)/(2*repsilon3*repsilon*repsilon))*qxr;
+
+
+}
+enum BRUSH_TYPE {SINGLE_SCALE,BI_SCALE,TRI_SCALE,
+                 TWIST};
  Eigen::Vector3d computeKelvin(double t, Eigen::Vector3d x, const KelvinParameters& parameters)
 {
-    BRUSH_TYPE type = BI_SCALE;
+    BRUSH_TYPE type = TWIST;
     Eigen::Matrix3d force;
     if(type==BI_SCALE)
     {
@@ -346,6 +364,11 @@ enum BRUSH_TYPE {SINGLE_SCALE,BI_SCALE,TRI_SCALE};
 
         force = w*force1 +w2*force2+w3*force3;
         force *= parameters.c / sum_w;
+
+    }
+    else if(type == TWIST)
+    {
+        return computeKelvinTwist(t,x,parameters);
 
     }
     else
@@ -445,6 +468,10 @@ void Viewer::move(Eigen::Vector3d force) {
 
 
     Eigen::Vector3d x0 = Eigen::Vector3d(startHandler[0],startHandler[1],startHandler[2]);//points[indiceTomove];
+    auto cv = this->camera()->position();
+    Eigen::Vector3d axis = x0- Eigen::Vector3d(cv[0],cv[1],cv[2]);
+    axis.normalize();
+
     //std::cout<<"size "<<mesh.vertex.size()<<std::endl;
     //Eigen::Vector3d x0 = points[indiceTomove];
     //force = Eigen::Vector3d(0.,1.,0.);
@@ -455,6 +482,7 @@ void Viewer::move(Eigen::Vector3d force) {
     parameters.c=c;
     parameters.epsilon = epsilon;
     parameters.force = force;
+    parameters.axis = axis;
     
     //int k =0;
     auto start = high_resolution_clock::now();
