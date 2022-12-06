@@ -318,6 +318,36 @@ enum BRUSH_TYPE {SINGLE_SCALE,BI_SCALE,TRI_SCALE};
         force = force1-force2;
         force *= (parameters.c / (1.0 / parameters.epsilon - 1. / parameters2.epsilon));
     }
+    else if (type==TRI_SCALE)
+    {
+        KelvinParameters parameters2 = parameters;
+        parameters2.epsilon = parameters.epsilon*1.1;
+
+        KelvinParameters parameters3 = parameters2;
+        parameters3.epsilon = parameters2.epsilon*1.1;
+
+        double e12 = parameters.epsilon*parameters.epsilon;
+        double e22 = parameters2.epsilon*parameters2.epsilon;
+        double e32 = parameters3.epsilon*parameters3.epsilon;
+
+        double w = 1.;
+        double w2 = -(e32-e12)/(e32-e22);
+        double w3 = (e22-e12)/(e32-e22);
+
+        double sum_w = w/parameters.epsilon+w2/parameters2.epsilon+w3/parameters3.epsilon;
+
+        // e1
+        auto force1 = computeKelvinForce(t, x, parameters);
+        //e2
+        auto force2 = computeKelvinForce(t, x, parameters2);
+        //e3
+        auto force3 = computeKelvinForce(t, x, parameters3);
+
+
+        force = w*force1 +w2*force2+w3*force3;
+        force *= parameters.c / sum_w;
+
+    }
     else
     {
         force = computeKelvinForce(t, x, parameters);
