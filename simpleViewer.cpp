@@ -303,6 +303,22 @@ Eigen::Matrix3d computeKelvinForce(double t, Eigen::Vector3d x, const KelvinPara
 }
 Eigen::Vector3d computeKelvinTwist(double t, Eigen::Vector3d x, const KelvinParameters& parameters)
 {
+    const Eigen::Vector3d rvector =   x- parameters.x0;
+    const double radius = rvector.norm();
+    const double repsilon =r_epsilon(radius,parameters.epsilon);
+    const double repsilon3=repsilon*repsilon*repsilon;
+
+    double epsilon2 = parameters.epsilon*parameters.epsilon;
+    double affineScalar = 1/repsilon3 + (3*epsilon2)/(2*repsilon3*repsilon*repsilon);
+    auto qxr = rvector.cross(parameters.force);
+
+    double scaleFactor = 10.;
+    return -scaleFactor*parameters.a*affineScalar*qxr;
+
+
+}
+Eigen::Vector3d computeKelvinScale(double t, Eigen::Vector3d x, const KelvinParameters& parameters)
+{
     const auto identity = Eigen::Matrix3d::Identity();
     const Eigen::Vector3d rvector =   x- parameters.x0;
     const double radius = rvector.norm();
@@ -310,19 +326,26 @@ Eigen::Vector3d computeKelvinTwist(double t, Eigen::Vector3d x, const KelvinPara
     const double repsilon3=repsilon*repsilon*repsilon;
 
     double epsilon2 = parameters.epsilon*parameters.epsilon;
+    double affineScalar = 1/repsilon3 + (3*epsilon2)/(2*repsilon3*repsilon*repsilon);
+    double scale = 2*parameters.b -parameters.a;
 
-    auto qxr = rvector.cross(parameters.force);
+    //std::cout<<"NORM"<<parameters.force.norm()<<std::endl;
+    auto scaleMatrix = parameters.force.norm() * identity;
 
     double scaleFactor = 10.;
-    return -scaleFactor*parameters.a*(1/repsilon3 + (3*epsilon2)/(2*repsilon3*repsilon*repsilon))*qxr;
+    auto delta =  -scaleFactor* scale*affineScalar *scaleMatrix;
+    //std::cout<<"SCALE"<<delta[0]<<" "<<delta[1]<<" "<<delta[2]<<std::endl;
+    //std::cout<<"SCALE"<<delta<<std::endl;
+
+    return delta*parameters.force;
 
 
 }
 enum BRUSH_TYPE {SINGLE_SCALE,BI_SCALE,TRI_SCALE,
-                 TWIST};
+                 TWIST, SCALE};
  Eigen::Vector3d computeKelvin(double t, Eigen::Vector3d x, const KelvinParameters& parameters)
 {
-    BRUSH_TYPE type = TWIST;
+    BRUSH_TYPE type = SCALE;
     Eigen::Matrix3d force;
     if(type==BI_SCALE)
     {
@@ -369,6 +392,11 @@ enum BRUSH_TYPE {SINGLE_SCALE,BI_SCALE,TRI_SCALE,
     else if(type == TWIST)
     {
         return computeKelvinTwist(t,x,parameters);
+
+    }
+    else if(type == SCALE)
+    {
+        return computeKelvinScale(t,x,parameters);
 
     }
     else
@@ -445,7 +473,7 @@ Eigen::Vector3d Viewer::rungeKutta( Eigen::Vector3d x,int index,const KelvinPara
 void Viewer::move(Eigen::Vector3d force) {
     constexpr double mu = 1.;
     //constexpr double v = -10000000000;
-    constexpr double v = 0.5;
+    constexpr double v = 0.;
     constexpr double a = 1./(4*M_PI*mu);
     constexpr double b = a / (4*(1.-v));
     constexpr double c = 2 / (3 * a - 2 * b);
